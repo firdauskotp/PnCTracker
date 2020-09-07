@@ -66,13 +66,7 @@ def action(msg):
         PnCTrackbot.sendMessage(chat_id,str("Welcome! Please press any of this buttons to proceed \n Press Register if you don't have an account \n Press Login if you already created an account"), reply_markup=keyboard)
     elif command == '/emergency':
         PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact"))
-        test=msg['text']
-        if test == 't':
-            PnCTrackbot.sendMessage(chat_id,str('work!'))
-        elif test == 't2':
-            PnCTrackbot.sendMessage(chat_id,str('work2!'))
-        else:
-            PnCTrackbot.sendMessage(chat_id,str('nuuu'))
+        
     else:
         PnCTrackbot.sendMessage(chat_id,str("Please input a correct command \n Use /help for details"))
 
