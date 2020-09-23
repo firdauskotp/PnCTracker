@@ -1,6 +1,8 @@
 #All the imports
 import time,datetime
 import telepot
+import serial
+import string
 from telepot.loop import MessageLoop
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
 
