@@ -1,10 +1,17 @@
 #All the imports
 import time,datetime
+import redis
 import telepot
 import serial
 import string
+import fcntl
+import socket
+import struct
 from telepot.loop import MessageLoop
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
+
+
+
 
 #print date
 now=datetime.datetime.now()
@@ -39,6 +46,24 @@ def build_menu(buttons,n_cols,footer_buttons):
 def action(msg):
     chat_id = msg['chat']['id']
     command = msg['text']
+
+    e_contact_no = []
+    e_contact_name = []
+
+    #To get ip
+    s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ip=socket.inet_ntoa(fcntl.ioctl(
+        s.fileno(),
+        0x8915, # SIOCGIFADDR
+        struct.pack('256s','eth0'[:15])
+        )[20:24])
+
+
+    
+    client = redis.Redis(host=ip, port = 6379)
+    #if ip is 10.0.2.9, this is the VM, not Pi
+
+    
 
     print ('Received: %s' % command)
 
