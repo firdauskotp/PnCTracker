@@ -12,7 +12,6 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton, Keybo
 
 
 
-
 #print date
 now=datetime.datetime.now()
 
@@ -42,10 +41,16 @@ def build_menu(buttons,n_cols,footer_buttons):
 #        one_time_keyboard=False
 #        )
 
+reg_step = 1
+log_step = 1
+
 #main function code
 def action(msg):
     chat_id = msg['chat']['id']
     command = msg['text']
+
+    global reg_step
+    global log_step
 
     e_contact_no = []
     e_contact_name = []
@@ -61,12 +66,10 @@ def action(msg):
 
     
     client = redis.Redis(host=ip, port = 6379)
-    #if ip is 10.0.2.9, this is the VM, not Pi
-
-    
 
     print ('Received: %s' % command)
 
+    #bot commands
     if command =='/info':
         PnCTrackbot.sendMessage(chat_id,str('This is a bot created to help busy family members to look after their kids or pets'))
     elif command =='/help':
@@ -89,8 +92,27 @@ def action(msg):
         resize_keyboard=True,
         one_time_keyboard=False
         )
-
         PnCTrackbot.sendMessage(chat_id,str("Welcome! Please press any of this buttons to proceed \n Press Register if you don't have an account \n Press Login if you already created an account"), reply_markup=keyboard)
+
+        if callback_data=='reg' and reg_step ==1:
+            PnCTrackbot.sendMessage(chat_id,str("Please enter a username"))
+            username=command
+            reg_step +=1
+        elif callback_data == 'reg' and reg_step ==2:
+            PnCTrackbot.sendMessage(chat_id,str("Please enter a password"))
+            password=command
+            reg_step+=1
+        elif callback_data == 'reg' and reg_step ==3:
+            PnCTrackbot.sendMessage(chat_id,str("Please confirm your password"))
+            confirm_password = command
+            if password==confirm_password:
+                reg_step+=1
+            else:
+                PnCTrackbot.sendMessage(chat_id,str("Your password does not match, returning you to the previous phase"))
+                reg_step-=1
+        else:
+            PnCTrackbot.sendMessage(chat_id,str("Congratulations, you have made an account \n \n Your username is ", username, "\nYourpassword is ", password, "\nPlease use the \help command to view all the functions of this bot"))
+            reg_step=1
     elif command == '/emergency':
         PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact"))
         
