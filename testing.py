@@ -1,6 +1,7 @@
 #All the imports
 import time,datetime
 import gps
+#import asyncio
 from pprint import pprint
 #import redis
 import telepot
@@ -15,20 +16,57 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton, Keybo
 #print date
 now=datetime.datetime.now()
 
+#All global variables
 reg_step = 1
-log_step = 1
-
+set_loop =0
+placelong1=0
+placelat1=0
+placelong2=0
+placelat2=0
+longitude=0
+latitude=0
+    
 #main function code
 def action(msg):
     chat_id = msg['chat']['id']
     command = msg['text']
+
+    content_type, chat_type, chat_id = telepot.glance(msg)
     #checking = msg['from']['id']
 
-    global reg_step
-    global log_step
 
-    e_contact_no = []
-    e_contact_name = []
+
+    global reg_step
+    global check_contact
+    global set_loop
+    global placelong1
+    global placelong2
+    global placelat1
+    global placelat2
+
+    e_contact_no = ["+60122374030","+60133471323"]
+    e_contact_name = ["Firdaus","Second no"]
+
+    print(e_contact_no)
+    print(e_contact_name)
+
+    #Uncomment once gps is working
+    '''
+
+    session = gps.gps("127.0.0.1","2947")
+    session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+    
+
+    
+    raw_data=session.next()
+    if raw_data['class']=='TPV':
+        if hasattr(raw_data,'lat'):
+            latitude = str(raw_data.lat)
+
+    if raw_data['class'] == 'TPV':
+        if hasattr(raw_data,'lon'):
+            longitude = str(raw_data.lon)
+    '''
 
     #To get ip
     '''
@@ -97,15 +135,67 @@ def action(msg):
         
        
         elif command == "/setlocation":
-            placeholder = 'lol'
-        
+            pl=0
+        elif command == '/setemergency':
+            set_loop =0
+            while set_loop ==0:
+                if len(e_contact_no)<=3 and len(e_contact_name)<=3:
+                
+                    if reg_step == 1:
+                        PnCTrackbot.sendMessage(chat_id,str("Please input a phone number \n You can only input 3 numbers(one at a time)"))
+
+                        pnumber = msg['text']
+                    
+                        if PnCTrackbot.getChat(pnumber):
+                            PnCTrackbot.sendMessage(chat_id,str("Emergency Number stored"))
+                            e_contact_no.append(pnumber)
+                            reg_step+=1
+                        else:
+                            PnCTrackbot.sendMessage(chat_id,str("No number stored"))
+                    elif reg_step ==2:
+                        PnCTrackbot.sendMessage(chat_id,str("Please input the contact's first name"))
+                        pname = msg['text']
+                    
+                        if pname != None:
+                            PnCTrackbot.sendMessage(chat_id,str("Emergency Name stored"))
+                            e_contact_name.append(pname)
+                            reg_step=1
+                            set_loop=1
+                        else:
+                            PnCTrackbot.sendMessage(chat_id,str("No number stored"))
+                else:
+                    PnCTrackbot.sendMessage(chat_id,str("3 contacts already stored!"))
+                    break
         elif command == '/emergency':
-            PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact"))
-        
+            if len(e_contact_no)>0:
+                PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact"))
+                for x in range(len(e_contact_no)):
+                    PnCTrackbot.sendContact(chat_id,str(e_contact_no[x]),str(e_contact_name[x]))
+            else:
+                PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact listed"))
+        elif command == '/delemergency':
+            placeholder=0
         else:
             PnCTrackbot.sendMessage(chat_id,str("Please input a correct command \n Use /help for details"))
+
+        #Uncomment when gps working
+        '''
+        if placelong1==0 and placelat1==0 and placelong2==0 and placelat2==0:
+            print('not set')
+        elif placelong1<longitude<placelong2 and placelat1<latitude<placelat2:
+            print('safe')
+        elif placelong1>longitude>placelong2 and placelat1>latitude>placelat2:
+            print('safe')
+        else:
+            print('danger')
+            PnCTrackbot.sendMessage(chat_id,str('TARGET IS OUT OF SAFE ZONE!'))
+            #if PnCTrackbot.getMessage(chat_id):
+              #  break
+              '''
+            
     else:
         PnCTrackbot.sendMessage(chat_id,str("Wrong user"))
+
 #Login/Register
 def on_callback_query(msg):
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
