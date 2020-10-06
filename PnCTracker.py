@@ -1,123 +1,275 @@
 #All the imports
 import time,datetime
-import redis
+import gps
+#import asyncio
+from pprint import pprint
+#import redis
 import telepot
 import serial
 import string
 import fcntl
 import socket
 import struct
+import RPi.GPIO as GPIO
 from telepot.loop import MessageLoop
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
-
+from telepot.delegate import pave_event_space, per_chat_id, create_open
 
 
 #print date
 now=datetime.datetime.now()
 
-def build_menu(buttons,n_cols,footer_buttons):
-    menu = [buttons[i:i+n_cols] for i in range(0, len(buttons), n_cols)]
-    if header_buttons:
-        menu.insert(0, header_buttons)
-    if footer_buttons:
-        menu.append(footer_buttons)
-    return menu
-
-
-#function for keyboard
-
-#LRButtons = [
-#   {'text':"Register",'callback_data':"reg"},
-#    {'text':"Login",'callback_data':"log"}
-#    ]
-#def logRegKeyboard(LRButtons, cols,header=None, footer=None):
-#    but_list=[]
-#    for LRbut in LRButtons:
-#        logreg = InlineKeyboardButton(LRbut.get('text'),callback_data=LRbut.get('callback_data'))
-#        but_list.append(logreg)
-#    reply_markup_LR = ReplyKeyboardMarkup(
-#       keyboard=build_menu(but_list, n_cols=cols, header_buttons=header, footer_buttons=footer),
-#        resize_keyboard=True,
-#        one_time_keyboard=False
-#        )
-
+#All global variables
 reg_step = 1
-log_step = 1
+set_loop =0
+placelong1=0
+placelat1=0
+placelong2=0
+placelat2=0
+longitude=0
+latitude=0
+buzzer=23
+#function for set emergency
+def seteme(msg):
+    chat_id = msg['chat']['id']
+    global reg_step
+    global check_contact
+    global set_loop
+    
+    pnumber=msg['text']
+    pname=msg['text']
+    
+    e_contact_no = ["+60122374030","+60133471323"]
+    e_contact_name = ["Firdaus","Second no"]
+
+    print(e_contact_no)
+    print(e_contact_name)
+    set_loop =0
+    if reg_step ==1 and pnumber==int:
+
+        PnCTrackbot.sendMessage(chat_id, "Please input an emergency contact number")
+        e_contact_no.append(pnumber)
+        reg_step=2
+    elif reg_step==2 and pname ==str:
+        PnCTrackbot.sendMessage(chat_id, "Please input first name")
+        e_contact_name.append(pname)
+        reg_step=1
+    else:
+        pass
+
+    
+    
+    '''
+    while set_loop ==0:
+        if len(e_contact_no)<=3 and len(e_contact_name)<=3:
+                
+            if reg_step == 1:
+                PnCTrackbot.sendMessage(chat_id,str("Please input a phone number \n You can only input 3 numbers(one at a time)"))
+
+                    
+                if pnumber == msg['text']:
+                    PnCTrackbot.sendMessage(chat_id,str("Emergency Number stored"))
+                    e_contact_no.append(pnumber)
+                    reg_step+=1
+                else:
+                    PnCTrackbot.sendMessage(chat_id,str("No number stored"))
+            elif reg_step ==2:
+                PnCTrackbot.sendMessage(chat_id,str("Please input the contact's first name"))
+                pname = msg['text']
+                    
+                if pname==['text']:
+                    PnCTrackbot.sendMessage(chat_id,str("Emergency Name stored"))
+                    e_contact_name.append(pname)
+                    reg_step=1
+                    set_loop=1
+                else:
+                    PnCTrackbot.sendMessage(chat_id,str("No number stored"))
+            else:
+                PnCTrackbot.sendMessage(chat_id,str("3 contacts already stored!"))
+                break
+                '''
+
 
 #main function code
 def action(msg):
     chat_id = msg['chat']['id']
     command = msg['text']
 
-    global reg_step
-    global log_step
 
-    e_contact_no = []
-    e_contact_name = []
+
+    print(telepot.glance(msg))
+
+    content_type, chat_type, chat_id = telepot.glance(msg)
+    #checking = msg['from']['id']
+
+
+
+    global placelong1
+    global placelong2
+    global placelat1
+    global placelat2
+
+    e_contact_no = ["+60122374030","+60133471323"]
+    e_contact_name = ["Firdaus","Second no"]
+
+    
+
+    #Uncomment once gps is working
+    '''
+
+    session = gps.gps("127.0.0.1","2947")
+    session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+    
+
+    
+    raw_data=session.next()
+    if raw_data['class']=='TPV':
+        if hasattr(raw_data,'lat'):
+            latitude = str(raw_data.lat)
+
+    if raw_data['class'] == 'TPV':
+        if hasattr(raw_data,'lon'):
+            longitude = str(raw_data.lon)
+    '''
 
     #To get ip
+    '''
     s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     ip=socket.inet_ntoa(fcntl.ioctl(
         s.fileno(),
         0x8915, # SIOCGIFADDR
         struct.pack('256s','eth0'[:15])
         )[20:24])
-
+        '''
 
     
-    client = redis.Redis(host=ip, port = 6379)
+    #client = redis.Redis(host=ip, port = 6379)
+    pprint(PnCTrackbot.getUpdates())
+    #print(PnCTrackbot.getChat(checking))
+    #print(PnCTrackbot.getChat(chat_id))
 
     print ('Received: %s' % command)
 
-    #bot commands
-    if command =='/info':
-        PnCTrackbot.sendMessage(chat_id,str('This is a bot created to help busy family members to look after their kids or pets'))
-    elif command =='/help':
-        PnCTrackbot.sendMessage(chat_id,str('/info : gives info about this app '))
-    elif command =='/track':
-        longitude='current long'
-        latitude='current lat'
-        PnCTrackbot.sendMessage(chat_id,str("Current longitude = ",longitude, ""))
-    elif command == "/setlocation":
-        placeholder = 'lol'
-    elif command == "/start":
+    if command == "/start":
         PnCTrackbot.sendPhoto(chat_id,photo="https://ibb.co/0s49y6Y")
+        PnCTrackbot.sendMessage(chat_id,str("Welcome! Please send a message as we want to check if you are the correct user"))
+
+    #Check user validity
+    if {u'first_name': u'Firdauskotp', u'type': u'private', u'id': 890706173} == PnCTrackbot.getChat(chat_id):
+
+        #bot commands
+        if command =='/info':
+            PnCTrackbot.sendMessage(chat_id,str('This is a bot created to help busy family members to look after their kids or pets'))
+  
+            
+
+        elif command =='/help':
+            PnCTrackbot.sendMessage(chat_id,str('/info : gives info about this app '))
+        elif command =='/track':
+            session = gps.gps("127.0.0.1","2947")
+            session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+            ch_lat=0
+            ch_lon=0
+            ch_time=0
+
+            try:
+                raw_data=session.next()
+                if raw_data['class']=='TPV':
+                    if hasattr(raw_data,'lat'):
+                        latitude = str(raw_data.lat)
+                        ch_lat=1
+                if raw_data['class'] == 'TPV':
+                    if hasattr(raw_data,'lon'):
+                        longitude = str(raw_data.lon)
+                        ch_lon=1
+                if raw_data['class'] == 'TPV':
+                    if hasattr(raw_data,'time'):
+                        cur_time = str(raw_data.time)
+                        ch_time=1
+                if ch_lat==1 and ch_lon==1 and ch_time==1:
+                    PnCTrackbot.sendMessage(chat_id,str('Current latitude: ', latitude, '\n Current longitude: ', longitude, "\n Current time: ",cur_time, "\n Link on Google Maps: \n http://www.google.com/maps/place/",latitide,",",longitude))
+                if ch_lat==0 and ch_lon==0 and ch_time==0:
+                    PnCTrackbot.sendMessage(chat_id,str('GPS not in coverage'))
+                
+            except StopIteration:
+                session = None
+                print('no gps')
+                PnCTrackbot.sendMessage(chat_id,str('GPS not in coverage'))
+                    
         
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="Register", callback_data='reg')],
-                [InlineKeyboardButton(text="Login", callback_data='log')],
-            ])
-
-        reply_markup_LR = ReplyKeyboardMarkup(
-        resize_keyboard=True,
-        one_time_keyboard=False
-        )
-        PnCTrackbot.sendMessage(chat_id,str("Welcome! Please press any of this buttons to proceed \n Press Register if you don't have an account \n Press Login if you already created an account"), reply_markup=keyboard)
-
-        if callback_data=='reg' and reg_step ==1:
-            PnCTrackbot.sendMessage(chat_id,str("Please enter a username"))
-            username=command
-            reg_step +=1
-        elif callback_data == 'reg' and reg_step ==2:
-            PnCTrackbot.sendMessage(chat_id,str("Please enter a password"))
-            password=command
-            reg_step+=1
-        elif callback_data == 'reg' and reg_step ==3:
-            PnCTrackbot.sendMessage(chat_id,str("Please confirm your password"))
-            confirm_password = command
-            if password==confirm_password:
-                reg_step+=1
+       
+        elif command == "/setlocation":
+            pl=0
+        elif command == '/setemergency':
+            seteme(msg)
+        elif command == '/emergency':
+            if len(e_contact_no)>0:
+                PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact to message on Telegram"))
+                for x in range(len(e_contact_no)):
+                    PnCTrackbot.sendContact(chat_id,str(e_contact_no[x]),str(e_contact_name[x]))
+                PnCTrackbot.sendMessage(chat_id,str("Click on an Emergency Contact to call using credit"))
+                for y in range(len(e_contact_no)):
+                    PnCTrackbot.sendMessage(chat_id,str(e_contact_no[y]))
             else:
-                PnCTrackbot.sendMessage(chat_id,str("Your password does not match, returning you to the previous phase"))
-                reg_step-=1
+                PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact listed"))
+        elif command == '/delemergency':
+            placeholder=0
+        elif command == '/seteme' and command[8]==str:
+            e_contact_no.append(command)
+            print(e_contact_no)
+        elif command == '/alarm':
+            #Disable GPIO warning
+            GPIO.setwarnings(False)
+
+            #Select GPIO mode
+            GPIO.setmode(GPIO.BCM)
+
+            global buzzer
+
+            #ground is 6 on right side
+            #buzzer pin is 16 on right side
+            
+            GPIO.setup(buzzer,GPIO.OUT)
+            GPIO.output(buzzer,GPIO.HIGH)
+            time.sleep(5)
+            GPIO.output(buzzer,GPIO.LOW)
+        elif command == '/contalarm':
+            GPIO.setwarnings(False)
+            GPIO.setmode(GPIO.BCM)
+
+            global buzzer
+            GPIO.setup(buzzer,GPIO.OUT)
+            GPIO.output(buzzer,GPIO.HIGH)
+            
+        elif command == '/stopalarm':
+
+            GPIO.setwarnings(False)
+
+            GPIO.setmode(GPIO.BCM)
+
+            global buzzer
+            GPIO.setup(buzzer,GPIO.OUT)
+            GPIO.output(buzzer,GPIO.LOW)    
         else:
-            PnCTrackbot.sendMessage(chat_id,str("Congratulations, you have made an account \n \n Your username is ", username, "\nYourpassword is ", password, "\nPlease use the \help command to view all the functions of this bot"))
-            reg_step=1
-    elif command == '/emergency':
-        PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact"))
-        
+            PnCTrackbot.sendMessage(chat_id,str("Please input a correct command \n Use /help for details"))
+
+        #Uncomment when gps working
+        '''
+        if placelong1==0 and placelat1==0 and placelong2==0 and placelat2==0:
+            print('not set')
+        elif placelong1<longitude<placelong2 and placelat1<latitude<placelat2:
+            print('safe')
+        elif placelong1>longitude>placelong2 and placelat1>latitude>placelat2:
+            print('safe')
+        else:
+            print('danger')
+            PnCTrackbot.sendMessage(chat_id,str('TARGET IS OUT OF SAFE ZONE!'))
+            #if PnCTrackbot.getMessage(chat_id):
+              #  break
+              '''
+            
     else:
-        PnCTrackbot.sendMessage(chat_id,str("Please input a correct command \n Use /help for details"))
+        PnCTrackbot.sendMessage(chat_id,str("Wrong user"))
 
 #Login/Register
 def on_callback_query(msg):
