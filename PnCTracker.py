@@ -1,8 +1,13 @@
 #All the imports
 import time,datetime
 import gps
+import requests
+import phonenumbers
+from phonenumbers import geocoder
+import re
 #import asyncio
 from pprint import pprint
+import mysql.connector
 #import redis
 import telepot
 import serial
@@ -28,38 +33,11 @@ placelong2=0
 placelat2=0
 longitude=0
 latitude=0
-buzzer=23
-#function for set emergency
-def seteme(msg):
-    chat_id = msg['chat']['id']
-    global reg_step
-    global check_contact
-    global set_loop
-    
-    pnumber=msg['text']
-    pname=msg['text']
-    
-    e_contact_no = ["+60122374030","+60133471323"]
-    e_contact_name = ["Firdaus","Second no"]
 
-    print(e_contact_no)
-    print(e_contact_name)
-    set_loop =0
-    if reg_step ==1 and pnumber==int:
+e_contact_no = ["+60122374030","+60133471323"]
+e_contact_name = ["Firdaus","Second no"]
 
-        PnCTrackbot.sendMessage(chat_id, "Please input an emergency contact number")
-        e_contact_no.append(pnumber)
-        reg_step=2
-    elif reg_step==2 and pname ==str:
-        PnCTrackbot.sendMessage(chat_id, "Please input first name")
-        e_contact_name.append(pname)
-        reg_step=1
-    else:
-        pass
-
-    
-    
-    '''
+'''
     while set_loop ==0:
         if len(e_contact_no)<=3 and len(e_contact_name)<=3:
                 
@@ -89,7 +67,6 @@ def seteme(msg):
                 break
                 '''
 
-
 #main function code
 def action(msg):
     chat_id = msg['chat']['id']
@@ -109,8 +86,8 @@ def action(msg):
     global placelat1
     global placelat2
 
-    e_contact_no = ["+60122374030","+60133471323"]
-    e_contact_name = ["Firdaus","Second no"]
+    global e_contact_no
+    global e_contact_name
 
     
 
@@ -200,13 +177,12 @@ def action(msg):
        
         elif command == "/setlocation":
             pl=0
-        elif command == '/setemergency':
-            seteme(msg)
         elif command == '/emergency':
             if len(e_contact_no)>0:
-                PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact to message on Telegram"))
-                for x in range(len(e_contact_no)):
-                    PnCTrackbot.sendContact(chat_id,str(e_contact_no[x]),str(e_contact_name[x]))
+                if len(e_contact_no)==len(e_contact_name):
+                    PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact to message on Telegram"))
+                    for x in range(len(e_contact_no)):
+                        PnCTrackbot.sendContact(chat_id,str(e_contact_no[x]),str(e_contact_name[x]))
                 PnCTrackbot.sendMessage(chat_id,str("Click on an Emergency Contact to call using credit"))
                 for y in range(len(e_contact_no)):
                     PnCTrackbot.sendMessage(chat_id,str(e_contact_no[y]))
@@ -214,9 +190,31 @@ def action(msg):
                 PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact listed"))
         elif command == '/delemergency':
             placeholder=0
-        elif command == '/seteme' and command[8]==str:
-            e_contact_no.append(command)
-            print(e_contact_no)
+            print(placeholder)
+        elif command.find("/setemenum") != -1:
+            l=9
+            if len(command[0+l+1:])==0:
+                PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact Listed!"))
+            else:
+                pnumber=command[0+l+1:].strip()
+                print(pnumber)
+                if re.search('[a-zA-Z]',pnumber):
+                    PnCTrackbot.sendMessage(chat_id,str("Number contains letters! Please put in another number"))
+                else:
+                    PnCTrackbot.sendMessage(chat_id,str("Emergency Contact Stored!"))
+                    #e_contact_no.append(pnumber)
+                    PnCTrackbot.sendMessage(chat_id,e_contact_no)
+                    PnCTrackbot.sendMessage(chat_id,str("If you haven't put in an Emergency Name for this number, please do so by using the command /setemename followed by the contact's name"))
+        elif command.find("/setemename") != -1:
+            l=10
+            if len(command[0+l+1:])==0:
+                PnCTrackbot.sendMessage(chat_id,str("No Emergency Name Included!"))
+            else:
+                pname=command[0+l+1:].strip()
+                PnCTrackbot.sendMessage(chat_id,str("Emergency Name saved!"))
+                #e_contact_name.append(pname)
+                PnCTrackbot.sendMessage(chat_id,e_contact_name)
+                PnCTrackbot.sendMessage(chat_id,str("If you haven't put in an Emergency Number for this contact, please do so by using the command /setemenum followed by the phone number"))
         elif command == '/alarm':
             #Disable GPIO warning
             GPIO.setwarnings(False)
@@ -224,22 +222,20 @@ def action(msg):
             #Select GPIO mode
             GPIO.setmode(GPIO.BCM)
 
-            global buzzer
 
             #ground is 6 on right side
             #buzzer pin is 16 on right side
             
-            GPIO.setup(buzzer,GPIO.OUT)
-            GPIO.output(buzzer,GPIO.HIGH)
+            GPIO.setup(23,GPIO.OUT)
+            GPIO.output(23,GPIO.HIGH)
             time.sleep(5)
-            GPIO.output(buzzer,GPIO.LOW)
+            GPIO.output(23,GPIO.LOW)
         elif command == '/contalarm':
             GPIO.setwarnings(False)
             GPIO.setmode(GPIO.BCM)
 
-            global buzzer
-            GPIO.setup(buzzer,GPIO.OUT)
-            GPIO.output(buzzer,GPIO.HIGH)
+            GPIO.setup(23,GPIO.OUT)
+            GPIO.output(23,GPIO.HIGH)
             
         elif command == '/stopalarm':
 
@@ -247,9 +243,8 @@ def action(msg):
 
             GPIO.setmode(GPIO.BCM)
 
-            global buzzer
-            GPIO.setup(buzzer,GPIO.OUT)
-            GPIO.output(buzzer,GPIO.LOW)    
+            GPIO.setup(23,GPIO.OUT)
+            GPIO.output(23,GPIO.LOW)    
         else:
             PnCTrackbot.sendMessage(chat_id,str("Please input a correct command \n Use /help for details"))
 
