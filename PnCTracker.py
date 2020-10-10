@@ -201,10 +201,13 @@ def action(msg):
                 if re.search('[a-zA-Z]',pnumber):
                     PnCTrackbot.sendMessage(chat_id,str("Number contains letters! Please put in another number"))
                 else:
-                    PnCTrackbot.sendMessage(chat_id,str("Emergency Contact Stored!"))
-                    #e_contact_no.append(pnumber)
-                    PnCTrackbot.sendMessage(chat_id,e_contact_no)
-                    PnCTrackbot.sendMessage(chat_id,str("If you haven't put in an Emergency Name for this number, please do so by using the command /setemename followed by the contact's name"))
+                    if re.search(r'\d',pnumber):
+                        PnCTrackbot.sendMessage(chat_id,str("Emergency Contact Stored!"))
+                        #e_contact_no.append(pnumber)
+                        PnCTrackbot.sendMessage(chat_id,e_contact_no)
+                        PnCTrackbot.sendMessage(chat_id,str("If you haven't put in an Emergency Name for this number, please do so by using the command /setemename followed by the contact's name"))
+                    else:
+                        PnCTrackbot.sendMessage(chat_id,str("Invalid Phone Number. Please try again"))
         elif command.find("/setemename") != -1:
             l=10
             if len(command[0+l+1:])==0:
