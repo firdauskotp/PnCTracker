@@ -26,7 +26,6 @@ now=datetime.datetime.now()
 
 #All global variables
 reg_step = 1
-set_loop =0
 placelong1=0
 placelat1=0
 placelong2=0
@@ -34,39 +33,22 @@ placelat2=0
 longitude=0
 latitude=0
 
-e_contact_no = ["+60122374030","+60133471323"]
-e_contact_name = ["Firdaus","Second no"]
+e_contact_no = []
+e_contact_name = []
 
-'''
-    while set_loop ==0:
-        if len(e_contact_no)<=3 and len(e_contact_name)<=3:
-                
-            if reg_step == 1:
-                PnCTrackbot.sendMessage(chat_id,str("Please input a phone number \n You can only input 3 numbers(one at a time)"))
+#mysql
+mydb = mysql.connector.connect(
+    host="localhost",
+    user="PnC",
+    password="toor",
+    database="emergency"
+    )
 
-                    
-                if pnumber == msg['text']:
-                    PnCTrackbot.sendMessage(chat_id,str("Emergency Number stored"))
-                    e_contact_no.append(pnumber)
-                    reg_step+=1
-                else:
-                    PnCTrackbot.sendMessage(chat_id,str("No number stored"))
-            elif reg_step ==2:
-                PnCTrackbot.sendMessage(chat_id,str("Please input the contact's first name"))
-                pname = msg['text']
-                    
-                if pname==['text']:
-                    PnCTrackbot.sendMessage(chat_id,str("Emergency Name stored"))
-                    e_contact_name.append(pname)
-                    reg_step=1
-                    set_loop=1
-                else:
-                    PnCTrackbot.sendMessage(chat_id,str("No number stored"))
-            else:
-                PnCTrackbot.sendMessage(chat_id,str("3 contacts already stored!"))
-                break
-                '''
+mycursor=mydb.cursor()
+print(mydb)
 
+mycursorname=mydb.cursor()
+mycursornum=mydb.cursor()
 #main function code
 def action(msg):
     chat_id = msg['chat']['id']
@@ -89,7 +71,31 @@ def action(msg):
     global e_contact_no
     global e_contact_name
 
+    global mycursor
+    global mycursornum
+    global mycursorname
+    global mydb
+
+    #appending to list from database
+
+    selectname = "SELECT name FROM e_name"
+    selectphone = "SELECT phonenumber FROM e_no"
+
+    mycursorname.execute(selectname)
+    resultname = mycursorname.fetchall()
+    if len(resultname)>0:
+        final_r_name = [ename[0] for ename in resultname]
+        e_contact_name.append(final_r_name)
+        print e_contact_name
+
+    mycursornum.execute(selectphone)
+    resultphone = mycursornum.fetchall()
+    if len(resultphone)>0:
+        final_r_no = [eno[0] for eno in resultphone]
+        e_contact_no.append(final_r_no)
+        print e_contact_no
     
+
 
     #Uncomment once gps is working
     '''
@@ -178,6 +184,8 @@ def action(msg):
         elif command == "/setlocation":
             pl=0
         elif command == '/emergency':
+            
+            
             if len(e_contact_no)>0:
                 if len(e_contact_no)==len(e_contact_name):
                     PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact to message on Telegram"))
@@ -204,7 +212,16 @@ def action(msg):
                     if re.search(r'\d',pnumber):
                         PnCTrackbot.sendMessage(chat_id,str("Emergency Contact Stored!"))
                         #e_contact_no.append(pnumber)
-                        PnCTrackbot.sendMessage(chat_id,e_contact_no)
+                        sql = "INSERT INTO e_no (phonenumber) VALUES (%s)"
+                        val = (str(pnumber))
+                        mycursor.execute(sql,(val, ))
+                        mydb.commit()
+                        query = "SELECT phonenumber FROM e_no"
+                        mycursor.execute(query)
+                        result = mycursor.fetchall()
+                        final_r_no = [eno[0] for eno in result]
+                        PnCTrackbot.sendMessage(chat_id,str("List of Emergency Contact Numbers"))
+                        PnCTrackbot.sendMessage(chat_id,final_r_no)
                         PnCTrackbot.sendMessage(chat_id,str("If you haven't put in an Emergency Name for this number, please do so by using the command /setemename followed by the contact's name"))
                     else:
                         PnCTrackbot.sendMessage(chat_id,str("Invalid Phone Number. Please try again"))
@@ -216,7 +233,17 @@ def action(msg):
                 pname=command[0+l+1:].strip()
                 PnCTrackbot.sendMessage(chat_id,str("Emergency Name saved!"))
                 #e_contact_name.append(pname)
-                PnCTrackbot.sendMessage(chat_id,e_contact_name)
+                #PnCTrackbot.sendMessage(chat_id,e_contact_name)
+                sql = "INSERT INTO e_name (name) VALUES (%s)"
+                val = (str(pname))
+                mycursor.execute(sql,(val, ))
+                mydb.commit()
+                query = "SELECT name FROM e_name"
+                mycursor.execute(query)
+                result = mycursor.fetchall()
+                final_r_name = [ename[0] for ename in result]
+                PnCTrackbot.sendMessage(chat_id,str("List of Emergency Contact Names"))
+                PnCTrackbot.sendMessage(chat_id,final_r_name)
                 PnCTrackbot.sendMessage(chat_id,str("If you haven't put in an Emergency Number for this contact, please do so by using the command /setemenum followed by the phone number"))
         elif command == '/alarm':
             #Disable GPIO warning
