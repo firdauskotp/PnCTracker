@@ -76,25 +76,6 @@ def action(msg):
     global mycursorname
     global mydb
 
-    #appending to list from database
-
-    selectname = "SELECT name FROM e_name"
-    selectphone = "SELECT phonenumber FROM e_no"
-
-    mycursorname.execute(selectname)
-    resultname = mycursorname.fetchall()
-    if len(resultname)>0:
-        final_r_name = [ename[0] for ename in resultname]
-        e_contact_name.append(final_r_name)
-        print e_contact_name
-
-    mycursornum.execute(selectphone)
-    resultphone = mycursornum.fetchall()
-    if len(resultphone)>0:
-        final_r_no = [eno[0] for eno in resultphone]
-        e_contact_no.append(final_r_no)
-        print e_contact_no
-    
 
 
     #Uncomment once gps is working
@@ -184,25 +165,52 @@ def action(msg):
         elif command == "/setlocation":
             pl=0
         elif command == '/emergency':
+
+            selectname = "SELECT name FROM e_name"
+            selectphone = "SELECT phonenumber FROM e_no"
+
+            mycursorname.execute(selectname)
+            resultname = mycursorname.fetchall()
             
+            mycursornum.execute(selectphone)
+            resultphone = mycursornum.fetchall()
+
             
-            if len(e_contact_no)>0:
-                if len(e_contact_no)==len(e_contact_name):
-                    PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact to message on Telegram"))
-                    for x in range(len(e_contact_no)):
-                        PnCTrackbot.sendContact(chat_id,str(e_contact_no[x]),str(e_contact_name[x]))
-                PnCTrackbot.sendMessage(chat_id,str("Click on an Emergency Contact to call using credit"))
-                for y in range(len(e_contact_no)):
-                    PnCTrackbot.sendMessage(chat_id,str(e_contact_no[y]))
+            if len(resultphone)>0:
+                if len(resultphone)==len(resultname):
+                    final_r_name = [ename[0] for ename in resultname]
+                    final_r_no = [eno[0] for eno in resultphone]
+                    PnCTrackbot.sendMessage(chat_id,str("MATCH"))
+                    PnCTrackbot.sendMessage(chat_id,str("This message will only show up if there is an Emergency Name for each Emergency Contact"))
+                    PnCTrackbot.sendMessage(chat_id,str("Select an Emergency Contact to message on Telegram(if available)"))
+                    for x in range(len(resultphone)):
+                        PnCTrackbot.sendContact(chat_id,str(final_r_no[x]),str(final_r_name[x]))
+                    PnCTrackbot.sendMessage(chat_id,str("Click on an Emergency Contact to call using credit"))
+                    for x2 in range(len(resultname)):
+                        PnCTrackbot.sendMessage(chat_id,final_r_name[x2])
+                        PnCTrackbot.sendMessage(chat_id,final_r_no[x2])
+                elif len(resultphone)!=len(resultname):
+                    PnCTrackbot.sendMessage(chat_id,str("NOT MATCH"))
+                    PnCTrackbot.sendMessage(chat_id,str("This message will only show up if there isn't Emergency Name for each Emergency Contact"))
+                    for y in range(len(resultphone)):
+                        final_r_no = [eno[0] for eno in resultphone]
+                        PnCTrackbot.sendMessage(chat_id,final_r_no[y])
             else:
                 PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact listed"))
-        elif command == '/delemergency':
-            placeholder=0
-            print(placeholder)
+        elif command == '/delemenum':
+            l=9
+            if len(command[0+l+1:])==0:
+                PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact Included"))
+        elif command == '/delemename':
+            l=10
+            if len(command[0+l+1:])==0:
+                PnCTrackbot.sendMessage(chat_id,str("No Emergency Name Included!"))
+            else:
+                
         elif command.find("/setemenum") != -1:
             l=9
             if len(command[0+l+1:])==0:
-                PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact Listed!"))
+                PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact Included!"))
             else:
                 pnumber=command[0+l+1:].strip()
                 print(pnumber)
@@ -211,7 +219,6 @@ def action(msg):
                 else:
                     if re.search(r'\d',pnumber):
                         PnCTrackbot.sendMessage(chat_id,str("Emergency Contact Stored!"))
-                        #e_contact_no.append(pnumber)
                         sql = "INSERT INTO e_no (phonenumber) VALUES (%s)"
                         val = (str(pnumber))
                         mycursor.execute(sql,(val, ))
@@ -223,6 +230,7 @@ def action(msg):
                         PnCTrackbot.sendMessage(chat_id,str("List of Emergency Contact Numbers"))
                         PnCTrackbot.sendMessage(chat_id,final_r_no)
                         PnCTrackbot.sendMessage(chat_id,str("If you haven't put in an Emergency Name for this number, please do so by using the command /setemename followed by the contact's name"))
+                        PnCTrackbot.sendMessage(chat_id,str("If the emergency name and contact numbers do not match, the features when using /emergency will be different"))
                     else:
                         PnCTrackbot.sendMessage(chat_id,str("Invalid Phone Number. Please try again"))
         elif command.find("/setemename") != -1:
@@ -232,8 +240,6 @@ def action(msg):
             else:
                 pname=command[0+l+1:].strip()
                 PnCTrackbot.sendMessage(chat_id,str("Emergency Name saved!"))
-                #e_contact_name.append(pname)
-                #PnCTrackbot.sendMessage(chat_id,e_contact_name)
                 sql = "INSERT INTO e_name (name) VALUES (%s)"
                 val = (str(pname))
                 mycursor.execute(sql,(val, ))
@@ -245,6 +251,7 @@ def action(msg):
                 PnCTrackbot.sendMessage(chat_id,str("List of Emergency Contact Names"))
                 PnCTrackbot.sendMessage(chat_id,final_r_name)
                 PnCTrackbot.sendMessage(chat_id,str("If you haven't put in an Emergency Number for this contact, please do so by using the command /setemenum followed by the phone number"))
+                PnCTrackbot.sendMessage(chat_id,str("If the emergency name and contact numbers do not match, the features when using /emergency will be different"))
         elif command == '/alarm':
             #Disable GPIO warning
             GPIO.setwarnings(False)
