@@ -197,23 +197,66 @@ def action(msg):
                         PnCTrackbot.sendMessage(chat_id,final_r_no[y])
             else:
                 PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact listed"))
-        elif command == '/delemenum':
+        elif command.find('/delemenum') != -1:
             l=9
             if len(command[0+l+1:])==0:
                 PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact Included"))
-        elif command == '/delemename':
+            else:
+                pnumber=command[0+l+1:].strip()
+                if re.search('[a-zA-Z]',pnumber):
+                    PnCTrackbot.sendMessage(chat_id,str("Number contains letters! Please put in another number"))
+                else:
+                    if re.search(r'\d',pnumber):
+                        query = "SELECT phonenumber FROM e_no"
+                        mycursor.execute(query)
+                        check_d_num = mycursor.fetchall()
+                        check_up_r_no = [eno[0] for eno in check_d_num]
+                        sql = "DELETE FROM e_no WHERE phonenumber = %s"
+                        val = (str(pnumber))
+                        mycursor.execute(sql,(val, ))
+                        mydb.commit()
+                        
+                        mycursor.execute(query)
+                        up_result = mycursor.fetchall()
+                        up_r_no = [eno[0] for eno in up_result]
+
+                        if len(check_up_r_no)!=len(up_r_no):
+                            PnCTrackbot.sendMessage(chat_id,str("Current List of Emergency Contact Numbers"))
+                            PnCTrackbot.sendMessage(chat_id,up_r_no)
+                        else:
+                            PnCTrackbot.sendMessage(chat_id,str("The phone number you included is not in the database"))
+                    else:
+                        PnCTrackbot.sendMessage(chat_id,str("Invalid Phone Number. Please try again"))
+        
+        elif command.find('/delemename') != -1:
             l=10
             if len(command[0+l+1:])==0:
                 PnCTrackbot.sendMessage(chat_id,str("No Emergency Name Included!"))
             else:
+                delname=command[0+l+1:].strip()
+                query="SELECT name FROM e_name"
+                mycursor.execute(query)
+                check_d_name = mycursor.fetchall()
+                check_up_r_no = [ename[0] for ename in check_d_name]
                 
+                sql="DELETE FROM e_name WHERE name = %s"
+                dn= (str(delname))
+                mycursor.execute(sql,(dn, ))
+                mydb.commit()
+                mycursor.execute(query)
+                update_result = mycursor.fetchall()
+                up_r_no = [ename[0] for ename in update_result]
+                if len(check_up_r_no)!=len(up_r_no):
+                    PnCTrackbot.sendMessage(chat_id,str("Current List of Emergency Names"))
+                    PnCTrackbot.sendMessage(chat_id,up_r_no)
+                else:
+                    PnCTrackbot.sendMessage(chat_id,str("The name you input is not in the database"))
         elif command.find("/setemenum") != -1:
             l=9
             if len(command[0+l+1:])==0:
                 PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact Included!"))
             else:
                 pnumber=command[0+l+1:].strip()
-                print(pnumber)
                 if re.search('[a-zA-Z]',pnumber):
                     PnCTrackbot.sendMessage(chat_id,str("Number contains letters! Please put in another number"))
                 else:
@@ -303,7 +346,7 @@ def action(msg):
     else:
         PnCTrackbot.sendMessage(chat_id,str("Wrong user"))
 
-#Login/Register
+
 def on_callback_query(msg):
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
     PnCTrackbot.answerCallbackQuery(query_id, text="Success")
