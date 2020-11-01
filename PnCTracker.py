@@ -30,8 +30,9 @@ placelong1=0
 placelat1=0
 placelong2=0
 placelat2=0
-longitude=0
-latitude=0
+longitude2=0
+latitude2=0
+csz=0
 
 e_contact_no = []
 e_contact_name = []
@@ -49,6 +50,26 @@ print(mydb)
 
 mycursorname=mydb.cursor()
 mycursornum=mydb.cursor()
+
+
+
+'''
+
+session = gps.gps("127.0.0.1","2947")
+session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+    
+
+    
+raw_data=session.next()
+if raw_data['class']=='TPV':
+    if hasattr(raw_data,'lat'):
+        latitude2 = str(raw_data.lat)
+
+if raw_data['class'] == 'TPV':
+    if hasattr(raw_data,'lon'):
+        longitude2 = str(raw_data.lon)
+'''
+
 #main function code
 def action(msg):
     chat_id = msg['chat']['id']
@@ -67,6 +88,7 @@ def action(msg):
     global placelong2
     global placelat1
     global placelat2
+    global csz
 
     global e_contact_no
     global e_contact_name
@@ -89,11 +111,11 @@ def action(msg):
     raw_data=session.next()
     if raw_data['class']=='TPV':
         if hasattr(raw_data,'lat'):
-            latitude = str(raw_data.lat)
+            latitude2 = str(raw_data.lat)
 
     if raw_data['class'] == 'TPV':
         if hasattr(raw_data,'lon'):
-            longitude = str(raw_data.lon)
+            longitude2 = str(raw_data.lon)
     '''
 
     #To get ip
@@ -110,7 +132,7 @@ def action(msg):
     #client = redis.Redis(host=ip, port = 6379)
     pprint(PnCTrackbot.getUpdates())
     #print(PnCTrackbot.getChat(checking))
-    #print(PnCTrackbot.getChat(chat_id))
+    print(PnCTrackbot.getChat(chat_id))
 
     print ('Received: %s' % command)
 
@@ -128,7 +150,8 @@ def action(msg):
             
 
         elif command =='/help':
-            PnCTrackbot.sendMessage(chat_id,str('/info : gives info about this app '))
+            PnCTrackbot.sendMessage(chat_id,str(
+                '/info : gives info about this app \n /track : shows the current location of the tracker \n /setzone : set the safe zone for the tracker, follow the instructions given \n /showzone: show the safe zone of the tracker \n /resetzone reset the safe zone to 0 \n /emergency: show the emergency contacts listed, output varies on whether the emergency contact name and number is given \n /setemenum xyz: set the emergency number, replace xyz with a contact number with a correct format \n /setemename xyz: set the emergency name, replace xyz with a contact name \n /delemenum xyz: deletes the emergency number given, replace xyz with the emergency number you want to delete \n /delemename xyz: deletes the emergency name given, replace xyz with the name you want to delete \n /alarm: rings the buzzer for 5 seconds \n /contalarm : rings the buzzer non-stop until the /stopalarm command is sent \n /stopalarm: stops the buzzer from ringing'))
         elif command =='/track':
             session = gps.gps("127.0.0.1","2947")
             session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
@@ -140,18 +163,20 @@ def action(msg):
                 raw_data=session.next()
                 if raw_data['class']=='TPV':
                     if hasattr(raw_data,'lat'):
-                        latitude = str(raw_data.lat)
+                        latitude2 = str(raw_data.lat)
                         ch_lat=1
                 if raw_data['class'] == 'TPV':
                     if hasattr(raw_data,'lon'):
-                        longitude = str(raw_data.lon)
+                        longitude2 = str(raw_data.lon)
                         ch_lon=1
                 if raw_data['class'] == 'TPV':
                     if hasattr(raw_data,'time'):
                         cur_time = str(raw_data.time)
                         ch_time=1
                 if ch_lat==1 and ch_lon==1 and ch_time==1:
-                    PnCTrackbot.sendMessage(chat_id,str('Current latitude: ', latitude, '\n Current longitude: ', longitude, "\n Current time: ",cur_time, "\n Link on Google Maps: \n http://www.google.com/maps/place/",latitide,",",longitude))
+                    PnCTrackbot.sendMessage(chat_id,str('Current latitude: ', latitude2, '\n Current longitude: ', longitude2, "\n Current time: ",cur_time))
+                    PnCTrackbot.sendLocation(890706173, latitude=latitude2, longitude = longitude2)
+   
                 if ch_lat==0 and ch_lon==0 and ch_time==0:
                     PnCTrackbot.sendMessage(chat_id,str('GPS not in coverage'))
                 
@@ -162,8 +187,59 @@ def action(msg):
                     
         
        
-        elif command == "/setlocation":
-            pl=0
+        elif command.find('/setzone') != -1:
+            l=7
+            if len(command[0+l+1:])==0:
+                PnCTrackbot.sendMessage(chat_id,str("TIME TO SETUP THE SAFE ZONE! \n Main: You need to /setzone xyz where xyz is the number \n Use /setzone to see which step you are at \n First Step: set the first latitude \n Second Step: set the first longitude \n Third Step: set the second latitude \n Fourth Step: set the second longitude \n The steps will be repeated after the fourth step"))
+                if csz==0:
+                    PnCTrackbot.sendMessage(chat_id,str("When you use /setzone, you will be setting the FIRST LATITUDE"))
+                elif csz==1:
+                    PnCTrackbot.sendMessage(chat_id,str("When you use /setzone, you will be setting the FIRST LONGITUDE"))
+                elif csz==2:
+                    PnCTrackbot.sendMessage(chat_id,str("When you use /setzone, you will be setting the SECOND LATITUDE"))
+                elif csz==3:
+                    PnCTrackbot.sendMessage(chat_id,str("When you use /setzone, you will be setting the SECOND LONGITUDE"))
+            else:
+                zone=command[0+l+1:].strip()
+                if re.search('[a-zA-Z]',zone):
+                    PnCTrackbot.sendMessage(chat_id,str("Letters detected! Only numbers please"))
+                else:
+                    if csz==0:
+                        placelat1=zone
+                        PnCTrackbot.sendMessage(chat_id,str("First latitude saved!"))
+                        csz = 1
+                    elif csz==1:
+                        placelong1=zone
+                        PnCTrackbot.sendMessage(chat_id,str("First longitude saved!"))
+                        csz = 2
+                    elif csz==2:
+                        placelat2=zone
+                        PnCTrackbot.sendMessage(chat_id,str("Second latitude saved!"))
+                        csz = 3
+                    elif csz==3:
+                        placelong2=zone
+                        PnCTrackbot.sendMessage(chat_id,str("Second longitude saved!"))
+                        csz = 0
+        elif command == "/showzone":
+            if placelat1==0 and placelat2==0 and placelong1==0 and placelong2==0:
+                PnCTrackbot.sendMessage(chat_id,str("No range is set, please use /setzone and follow the instructions there"))
+            elif placelat1==0 or placelat2==0 or placelong1==0 or placelong2==0:
+                PnCTrackbot.sendMessage(chat_id,str("Range incomplete, please use /setzone and follow the instruction there"))
+            else:
+                PnCTrackbot.sendMessage(chat_id,str("First Latitude: " + placelat1))
+                PnCTrackbot.sendMessage(chat_id,str("First Longitude: " + placelong1))
+                PnCTrackbot.sendMessage(chat_id,str("Second Latitude: " + placelat2))
+                PnCTrackbot.sendMessage(chat_id,str("Second Longitude: " + placelong2))
+                PnCTrackbot.sendMessage(chat_id,str("The map for the first coordinate is: "))
+                PnCTrackbot.sendLocation(chat_id,latitude=placelat1, longitude=placelong1)
+                PnCTrackbot.sendMessage(chat_id,str("The map for the second coordinate is: "))
+                PnCTrackbot.sendLocation(chat_id,latitude=placelat2, longitude=placelong2)
+        elif command == "/resetzone":
+            placelat1=0
+            placelat2=0
+            placelong1=0
+            placelong2=0
+            csz=0
         elif command == '/emergency':
 
             selectname = "SELECT name FROM e_name"
@@ -362,6 +438,18 @@ print (PnCTrackbot.getMe())
 PnCTrackbot.message_loop({'chat':action,
                           'callback_query': on_callback_query})
 
-#pause
+#pause and make active system
 while 1:
+    #PnCTrackbot.sendMessage(890706173,'test')
+    if placelong1==0 or placelat1==0 or placelong2==0 or placelat2==0:
+        print('not set')
+        #PnCTrackbot.sendLocation(890706173, latitude=3.181210, longitude = 101.697448)
+    elif placelong1<longitude2<placelong2 and placelat1<latitude2<placelat2:
+        print('safe')
+    elif placelong1>longitude2>placelong2 and placelat1>latitude2>placelat2:
+        print('safe')
+    else:
+        print('danger')
+        PnCTrackbot.sendMessage(890706173,str('TARGET IS OUT OF SAFE ZONE!'))
+        PnCTrackbot.sendLocation(890706173, latitude=latitude2, longitude = longitude2)
     time.sleep(10)
