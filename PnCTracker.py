@@ -350,13 +350,18 @@ def action(msg):
                 PnCTrackbot.sendMessage(chat_id,str("No Emergency Contact Included!"))
             else:
                 pnumber=command[0+l+1:].strip()
+                print(pnumber)
                 if re.search('[a-zA-Z]',pnumber):
                     PnCTrackbot.sendMessage(chat_id,str("Number contains letters! Please put in another number"))
                 else:
                     if re.search(r'\d',pnumber):
                         PnCTrackbot.sendMessage(chat_id,str("Emergency Contact Stored!"))
                         sql = "INSERT INTO e_no (phonenumber) VALUES (%s)"
-                        val = (str(pnumber))
+                        if (pnumber[0]!="+")
+                            pnumber2 = "+" + str(pnumber)
+                            val = (str(pnumber))
+                        else:
+                            val = (str(pnumber))
                         mycursor.execute(sql,(val, ))
                         mydb.commit()
                         query = "SELECT phonenumber FROM e_no"
