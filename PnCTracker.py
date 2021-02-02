@@ -457,7 +457,7 @@ def on_callback_query(msg):
 
 
 #token
-PnCTrackbot = telepot.Bot('1324350318:AAF4fxLHpoPoS1oVjwxQ_fccqoZDVOxeMNk')
+PnCTrackbot = telepot.Bot('put your bot token here')
 print (PnCTrackbot.getMe())
 
 #Calling function
